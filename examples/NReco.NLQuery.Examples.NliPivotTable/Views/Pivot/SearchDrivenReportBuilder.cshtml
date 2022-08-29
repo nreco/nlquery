@@ -1,0 +1,137 @@
+﻿@model NReco.PivotData.PivotDataConfiguration
+@{
+	ViewBag.Title = "Search-driven analytics (Q&A report builder) - NReco NLQuery C#/ASP.NET Example";
+	ViewBag.PageAlias = "searchdrivenreportbuilder";
+	ViewBag.Description = "Search-like interface for ad-hoc reporting with pivot tables (provided by PivotData Toolkit).";
+}
+
+	<!-- basic pivot table styles -->
+	<link href="http://pivottable.nrecosite.com/Scripts/nrecopivottable.css" rel="stylesheet" />
+
+	<!-- nreco pivot table jQuery plugin (adds sorting, fixed headers) -->
+	<script type="text/javascript" src="http://pivottable.nrecosite.com/Scripts/jquery.nrecopivottable.js"></script>
+
+	
+	<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.textcomplete/1.8.0/jquery.textcomplete.min.js"></script>
+	
+
+	<h1>
+		Search-Driven Pivot Table Report Builder
+		<small>ASP.NET MVC demo</small>
+	</h1>
+
+	<hr />
+
+	<div class="row">
+		<div class="col-md-6">
+			<div class="input-group">
+				<input id="searchInput" name="searchInput" type="text" class="form-control" placeholder="Type your search query..." value="count by region" />
+
+				<a class="doSearch input-group-addon" href="javascript:void(0)">
+					<span class="glyphicon glyphicon-search" />
+				</a>
+			</div>
+
+			<span id="helpBlock" class="help-block"><small>Examples: "france and germany by product total sum", "Canada 2013 2014 by month"</small></span>
+
+		</div>
+		<div class="col-md-6">
+			<dl class="dl-horizontal">
+				<dt>Dimensions</dt>
+				<dd>
+					@foreach (var dim in Model.Dimensions) {
+						<span class="label label-primary" style="margin-right:2px;display:inline-block">@dim</span>
+					}
+				</dd>
+				<dt>Measures</dt>
+				<dd>
+					@foreach (var aggrCfg in Model.Aggregators) {
+						<span class="label label-info" style="margin-right:2px;display:inline-block">
+							@aggrCfg.Name
+							@if (aggrCfg.Params != null && aggrCfg.Params.Length > 0) {
+								<text> of </text> @aggrCfg.Params[0]
+							}
+						</span>
+					}
+</dd>
+			</dl>
+		</div>
+	</div>
+
+
+	<div id="pivotTableView" style="overflow-x:auto;">
+
+
+	</div>
+
+<script type="text/javascript">
+	$(function () {
+		var $searchQuery = $('#searchInput');
+
+		function doSearch() {
+			if ($searchQuery.attr('disabled') == 'disabled')
+				return;
+			$searchQuery.attr('disabled', 'disabled');
+
+			$.ajax('@Url.Action("PivotTableHtml", "Pivot")', {
+				type: "POST",
+				data: {
+					searchQuery: $searchQuery.val()
+				}
+			}).done(function (reportHtml) {
+				var $pvtHolder = $('#pivotTableView');
+				var $pvtDiv = $('<div/>');
+				$pvtHolder.html("");
+				$pvtHolder.append($pvtDiv);
+				$pvtDiv.html(reportHtml);
+				$pvtDiv.nrecoPivotTable({
+					fixedHeaders:true
+				});
+			}).always(function () {
+				$searchQuery.attr('disabled', null)
+			});
+		}
+
+		$('.doSearch').click(function () { doSearch(); });
+		$searchQuery.keypress(function (e) {
+			if (e.which == 13) {
+				doSearch();
+				return false;
+			}
+		});
+		doSearch(); // execute default query
+
+
+		$searchQuery.textcomplete([{
+			match: /(^|(?![^\wа-яА-Я]))([\wа-яА-Я]{1,})$/,
+			search: function (term, callback) {
+				if (!term) return;
+
+				$.ajax('@Url.Action("SuggestKeywords", "Pivot")', {
+					type: "POST",
+					data: {
+						term: term,
+						maxResults: 20
+					}
+				}).success(function (res) {
+					callback(res);
+				}).fail(function () {
+					callback([]);
+				});
+
+			},
+			replace: function (word) {
+				return word + " ";
+			}
+		}], {
+			placement: "",
+			debounce: 200
+		});
+
+
+	});
+
+
+</script>
+
+

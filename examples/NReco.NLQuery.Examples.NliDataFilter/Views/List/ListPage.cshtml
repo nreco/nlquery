@@ -1,0 +1,94 @@
+﻿
+@{
+	ViewBag.Title = "Natural Language Query to SQL (Data Filter) - NReco NLQuery C#/ASP.NET Example";
+	ViewBag.PageAlias = "listdatafilter";
+	ViewBag.Description = "NLQuery can be used for adding search-like filter for data list or data grid. Keywords autocomplete helps users to form a query.";
+}
+
+<h1>Search-based List Filter ASP.NET MVC Example</h1>
+
+
+<div class="input-group">
+	<input id="searchInput" name="searchInput" type="text" class="form-control" placeholder="Search..."/>
+
+	<a class="doSearch input-group-addon" href="javascript:void(0)">
+		<span class="glyphicon glyphicon-search" />
+	</a>
+</div>
+
+<span id="helpBlock" class="help-block"><small>Examples: "Kloss last year", "France Germany 1997", "price above 40 and quantity > 20"</small></span>
+
+<br/>
+<div id="listView">
+	@{ Html.RenderAction("ListView", "List"); }
+</div>
+
+
+<script type="text/javascript">
+	$(function () {
+		var $filter = $('#searchInput');
+
+		function doSearch() {
+			if ($filter.attr('disabled') == 'disabled')
+				return;
+			$filter.attr('disabled', 'disabled');
+
+			$.ajax('@Url.Action("ListView","List")', {
+				type: "POST",
+				data: {
+					searchQuery: $filter.val()
+				}
+			}).done(function (listHtml) {
+				$('#listView').html(listHtml);
+			}).always(function () {
+				$filter.attr('disabled', null)
+			});
+		}
+
+		$('.doSearch').click(function () { doSearch(); });
+		$filter.keypress(function (e) {
+			if (e.which == 13) {
+				doSearch();
+				return false;
+			}
+		});
+
+
+		$filter.textcomplete([{
+			match: /(^|\b)(\w{1,})$/,
+			search: function (term, callback) {
+				if (!term) return;
+
+				// autocomplete behaviour may be simple (suggest keyword by first letters)
+				// or more advanced (make suggestion in context of whole phrase)
+
+				// for the sake of simplicity this example implements simple server-side suggestion logic.
+				// depending on situation (number of unique keys, application UX requirements) autocomplete
+				// suggestion may be performed on the client-side or in hybrid mode.
+
+				$.ajax('@Url.Action("SuggestKeys", "List")', {
+					type: "POST",
+					data: {
+						term: term,
+						maxResults: 20
+					}
+				}).success(function (res) {
+					callback(res);
+				}).fail(function () {
+					callback([]);
+				});
+
+			},
+			replace: function (word) {
+				return word + " ";
+			}
+		}], {
+			placement: "",
+			debounce: 200
+		});
+
+
+	});
+
+
+</script>

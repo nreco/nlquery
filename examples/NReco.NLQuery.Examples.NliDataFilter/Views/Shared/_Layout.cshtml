@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>@ViewBag.Title</title>
+		<title>@ViewBag.Description</title>
+		<meta content="@ViewBag.Description" name="description" />
+        
+		<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+		<link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.js"></script>
+
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery.textcomplete/1.8.0/jquery.textcomplete.min.js"></script>
+	
+
+		<style>
+			body {
+				margin-top:60px;
+			}
+		</style>
+    </head>
+    <body>	
+
+		<div class="navbar navbar-default navbar-fixed-top">
+			<div class="container">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="https://www.nrecosite.com/nlp_ner_net.aspx">NReco NLQuery Examples</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav pull-left topMenu">
+						<li class="@(ViewBag.PageAlias=="listdatafilter"?"active":"")">
+							<a href="@Url.RouteUrl(new { Controller = "List", Action = "ListView" })">List Data Filter</a>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<div class="container">
+			@RenderBody()
+
+		</div>
+
+		<div style="text-align:center; background-color:#F0F0F0; padding:20px; margin-top:20px;">
+			This example is a part of NReco NLQuery package. You can integrate this natural language interface into your ASP.NET project.
+			<br />
+			<a class="btn btn-large btn-info" href="https://www.nrecosite.com/nlp_ner_net.aspx" style="margin-top:10px;">Get more information about NReco NLQuery for .NET</a>
+		</div>
+
+
+        @RenderSection("scripts", required: false)
+		
+		<script type="text/javascript">
+		var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+		if (document.location.host!="localhost")
+			document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+		</script>
+		<script type="text/javascript">
+		try {
+			if (location.host != "localhost") {
+				window.pageTracker = _gat._getTracker("UA-10708820-1");
+				window.pageTracker._setDomainName('nrecosite.com');
+				window.pageTracker._setAllowLinker(true);				
+				window.pageTracker._trackPageview();
+			}
+		} catch(err) {}</script>		
+		
+    </body>
+</html>

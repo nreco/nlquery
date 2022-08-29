@@ -1,0 +1,35 @@
+﻿@model NReco.NLQuery.Examples.NliDataFilter.Models.ListContext
+
+@if (Model.FilterCondition != null) {
+	<div class="alert alert-warning">
+		<b>Suggested Filter:</b> @Model.FilterCondition
+	</div>
+}
+
+<table class="table">
+	<tr>
+		<td>Order #</td>
+		<th>Company</th>
+		<th>Contact</th>
+		<th>Country</th>
+		<th>Order Date</th>
+		<th>Product</th>
+		<th>Unit Price</th>
+		<th>Quantity</th>
+	</tr>
+
+	@foreach (var r in Model.Data) { 
+	<tr>
+		<td>@r["OrderID"]</td>
+		<td>@r["CompanyName"]</td>
+		<td>@r["ContactName"]</td>
+		<td>@r["Country"]</td>
+		<td>@String.Format("{0:d}", r["OrderDate"] )</td>
+		<td>@r["ProductName"]</td>
+		<td>@r["UnitPrice"]</td>
+		<td>@r["Quantity"]</td>
+	</tr>
+	}
+</table>
+
+

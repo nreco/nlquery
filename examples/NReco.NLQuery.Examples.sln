@@ -1,0 +1,43 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32510.428
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NReco.NLQuery.Examples.NerByDataset", "NReco.NLQuery.Examples.NerByDataset\NReco.NLQuery.Examples.NerByDataset.csproj", "{A16FEA9B-F8C5-4462-BFF7-FE3F98524911}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NReco.NLQuery.Examples.NliDataFilter", "NReco.NLQuery.Examples.NliDataFilter\NReco.NLQuery.Examples.NliDataFilter.csproj", "{3F21C8FF-677B-44C2-86BB-5745B2A6820F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NReco.NLQuery.Examples.NliPivotTable", "NReco.NLQuery.Examples.NliPivotTable\NReco.NLQuery.Examples.NliPivotTable.csproj", "{35749CB7-048E-4DBA-8B1B-A6F3E102F164}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NReco.NLQuery.Examples.NlqForOlap", "NReco.NLQuery.Examples.NlqForOlap\NReco.NLQuery.Examples.NlqForOlap.csproj", "{003010A2-C0B3-482B-80A9-88565025A575}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A16FEA9B-F8C5-4462-BFF7-FE3F98524911}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A16FEA9B-F8C5-4462-BFF7-FE3F98524911}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A16FEA9B-F8C5-4462-BFF7-FE3F98524911}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A16FEA9B-F8C5-4462-BFF7-FE3F98524911}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F21C8FF-677B-44C2-86BB-5745B2A6820F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F21C8FF-677B-44C2-86BB-5745B2A6820F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F21C8FF-677B-44C2-86BB-5745B2A6820F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F21C8FF-677B-44C2-86BB-5745B2A6820F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35749CB7-048E-4DBA-8B1B-A6F3E102F164}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35749CB7-048E-4DBA-8B1B-A6F3E102F164}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35749CB7-048E-4DBA-8B1B-A6F3E102F164}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35749CB7-048E-4DBA-8B1B-A6F3E102F164}.Release|Any CPU.Build.0 = Release|Any CPU
+		{003010A2-C0B3-482B-80A9-88565025A575}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{003010A2-C0B3-482B-80A9-88565025A575}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{003010A2-C0B3-482B-80A9-88565025A575}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{003010A2-C0B3-482B-80A9-88565025A575}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F9CA8693-3ED6-4FD1-B49E-982527A200FD}
+	EndGlobalSection
+EndGlobal
