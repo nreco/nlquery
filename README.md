@@ -11,6 +11,20 @@ NReco.NLQuery provides a simple way to add search-based interface into your .NET
 * can helps users to form a query by providing autocomplete suggestions
 * includes a component that automatically configures recognizer by a data table description.
 
+## Online demos
+
+* [Search-like list filter](http://nlquery.nrecosite.com/) (NliDataFilter example)
+* [Search-driven analytics (Q&A)](http://nlquery.nrecosite.com/Pivot/SearchDrivenReportBuilder) (NliPivotTable example)
+* [PivotData Microservice search queries](http://pivotdataservice.nrecosite.com/pivotdataservice/search-driven-analytics-nlq.html)
+
+## Examples
+
+* [NerByDataSet](https://github.com/nreco/nlquery/tree/master/examples/NReco.NLQuery.Examples.NerByDataset): Recognizes search query in context of MovieLens dataset (films).
+* [NliDataFilter](https://github.com/nreco/nlquery/tree/master/examples/NReco.NLQuery.Examples.NliDataFilter): ASP.NET example for natural language query to SQL translation (data list search-like filter).
+* [NliPivotTable](https://github.com/nreco/nlquery/tree/master/examples/NReco.NLQuery.Examples.NliPivotTable): ASP.NET example for search-driven analytics (Q&A report builder). This example uses [PivotData Toolkit](https://www.nrecosite.com/pivot_data_library_net.aspx) for pivot tables generation.
+* [NlqForOlap](https://github.com/nreco/nlquery/tree/master/examples/NReco.NLQuery.Examples.NlqForOlap): how to parse natural language queries to build OLAP-kind of queries (no dependency on the concrete OLAP technology).
+
+
 ## Who is using this?
 NReco.NLQuery is in production use at [SeekTable.com](https://www.seektable.com/) and [PivotData microservice](https://www.nrecosite.com/pivotdata_service.aspx).
 
