@@ -1,4 +1,4 @@
-﻿
+﻿@model NReco.NLQuery.Examples.NliDataFilter.Models.ListContext
 @{
 	ViewBag.Title = "Natural Language Query to SQL (Data Filter) - NReco NLQuery C#/ASP.NET Example";
 	ViewBag.PageAlias = "listdatafilter";
@@ -16,11 +16,11 @@
 	</a>
 </div>
 
-<span id="helpBlock" class="help-block"><small>Examples: "Kloss last year", "France Germany 1997", "price above 40 and quantity > 20"</small></span>
+<span id="helpBlock" class="help-block"><small>Examples: "Kloss last year", "France Germany 2015", "price above 40 and quantity > 20"</small></span>
 
 <br/>
 <div id="listView">
-	@{ Html.RenderAction("ListView", "List"); }
+	@await Html.PartialAsync("ListView", Model)
 </div>
 
 

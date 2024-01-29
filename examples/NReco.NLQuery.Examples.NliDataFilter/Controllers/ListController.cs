@@ -1,48 +1,33 @@
-﻿/*
- *  Copyright 2016-2018 Vitaliy Fedorchenko (nrecosite.com)
- *
- *  Licensed under NLQuery Source Code Licence (see LICENSE file).
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
- *  OF ANY KIND, either express or implied.
- */
-
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using System.Xml;
+using Microsoft.AspNetCore.Mvc;
 using System.IO;
-using System.Threading;
-using System.Text;
-using System.Web.UI;
-using System.Data;
-using System.Web.Script.Serialization;
-using System.Web.Caching;
+using Microsoft.AspNetCore.Hosting;
 
 using NReco.NLQuery.Examples.NliDataFilter.Data;
 using NReco.NLQuery.Examples.NliDataFilter.Models;
 
 using NReco.Data;
 using NReco.NLQuery.Table;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace NReco.NLQuery.Examples.NliDataFilter {
 	
 	public class ListController : Controller {
 
 		ListDataRepository DataRepository { get; set; }
+		IWebHostEnvironment HostEnv;
+		IMemoryCache MemCache;
 
-		public ListController() {
+		public ListController(IWebHostEnvironment hostEnv, IMemoryCache memoryCache) {
+			HostEnv = hostEnv;
+			MemCache = memoryCache;
 			DataRepository = new ListDataRepository(ConfigureDataSource());
 		}
 
-		public ActionResult ListPage() {
-			return View();
-		}
-
-		public ActionResult ListView(string searchQuery) {
+		ListContext createListContext(string searchQuery) {
 			QNode filter = null;
 			if (!String.IsNullOrEmpty(searchQuery)) {
 				var parser = GetListQueryParser();
@@ -52,11 +37,18 @@ namespace NReco.NLQuery.Examples.NliDataFilter {
 				}
 			}
 			var listData = DataRepository.Load(new Query("OrderDetailsView", filter) { RecordCount = 20 });
-
-			return PartialView( new ListContext() {
+			return new ListContext() {
 				Data = listData,
 				FilterCondition = new NReco.Data.Relex.RelexBuilder().BuildRelex(filter)
-			} );
+			};
+		}
+
+		public ActionResult ListPage() {
+			return View(createListContext(null));
+		}
+
+		public ActionResult ListView(string searchQuery) {
+			return PartialView(createListContext(searchQuery));
 		}
 
 		public ActionResult SuggestKeys(string term, int maxResults) {
@@ -67,7 +59,7 @@ namespace NReco.NLQuery.Examples.NliDataFilter {
 
 		ListQueryParser GetListQueryParser() {
 			var cacheKey = "customer_projects_query_parser";
-			var parser = HttpRuntime.Cache.Get(cacheKey) as ListQueryParser;
+			var parser = MemCache.Get(cacheKey) as ListQueryParser;
 			if (parser == null) {
 				parser = new ListQueryParser(
 					// describe data table schema for recognition
@@ -115,17 +107,17 @@ namespace NReco.NLQuery.Examples.NliDataFilter {
 							}
 						}
 					});
-				HttpRuntime.Cache[cacheKey] = parser;
+				MemCache.Set(cacheKey, parser);
 			}
 			return parser;
 		}
 
 		DbDataAdapter ConfigureDataSource() {
-			var dbFactory = new DbFactory(System.Data.SQLite.SQLiteFactory.Instance) {
+			var dbFactory = new DbFactory(Microsoft.Data.Sqlite.SqliteFactory.Instance) {
 				LastInsertIdSelectText = "SELECT last_insert_rowid()"
 			};
 			var dbConnection = dbFactory.CreateConnection();
-			dbConnection.ConnectionString = "Data Source=" + Path.Combine(System.Web.HttpRuntime.AppDomainAppPath, "northwind.db");
+			dbConnection.ConnectionString = "Data Source=" + Path.Combine(HostEnv.ContentRootPath, "northwind.db");
 			var dbCmdBuilder = new DbCommandBuilder(dbFactory);
 			dbCmdBuilder.Views["OrderDetailsView"] = new DbDataView(@"
 				select @columns from (

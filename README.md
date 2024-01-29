@@ -17,7 +17,7 @@ NReco.NLQuery provides a simple way to add search-based interface into your .NET
 * [Search-driven analytics (Q&A)](http://nlquery.nrecosite.com/Pivot/SearchDrivenReportBuilder) (NliPivotTable example)
 * [PivotData Microservice search queries](http://pivotdataservice.nrecosite.com/pivotdataservice/search-driven-analytics-nlq.html)
 
-## Examples
+## Examples (NET8)
 
 * [NerByDataSet](https://github.com/nreco/nlquery/tree/master/examples/NReco.NLQuery.Examples.NerByDataset): Recognizes search query in context of MovieLens dataset (films).
 * [NliDataFilter](https://github.com/nreco/nlquery/tree/master/examples/NReco.NLQuery.Examples.NliDataFilter): ASP.NET example for natural language query to SQL translation (data list search-like filter).
@@ -30,7 +30,7 @@ NReco.NLQuery is in production use at [SeekTable.com](https://www.seektable.com/
 
 
 ## License
-Copyright 2016-2022 Vitaliy Fedorchenko
+Copyright 2016-2024 Vitaliy Fedorchenko
 
 Distributed under the NReco NLQuery FREE license (see src/LICENSE): this library can be used for free only in non-SaaS apps that have only one single-server production deployment.
 In all other cases commercial license is required (can be purchased [here](https://www.nrecosite.com/nlp_ner_net.aspx)).

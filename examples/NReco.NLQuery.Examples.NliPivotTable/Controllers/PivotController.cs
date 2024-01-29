@@ -1,31 +1,27 @@
-﻿/*
- *  Copyright 2015-2018 Vitaliy Fedorchenko (nrecosite.com)
- *
- *  Licensed under NLQuery Source Code Licence (see LICENSE file).
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
- *  OF ANY KIND, either express or implied.
- */
-
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-using System.Web.Mvc;
-using System.Xml;
+using Microsoft.AspNetCore.Mvc;
 using System.IO;
-using System.Web.Caching;
-
+using Microsoft.AspNetCore.Hosting;
 
 using NReco.PivotData;
 using NReco.PivotData.Input;
 using NReco.PivotData.Output;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace NReco.NLQuery.Examples.NliPivotTable.Controllers {
 	
 	public class PivotController : Controller {
+
+		IWebHostEnvironment HostEnv;
+		IMemoryCache MemCache;
+
+		public PivotController(IWebHostEnvironment hostEnv, IMemoryCache memoryCache) {
+			HostEnv = hostEnv;
+			MemCache = memoryCache;
+		}
 
 		public ActionResult SearchDrivenReportBuilder() {
 			var dataCube = LoadDataCube("cube");
@@ -96,9 +92,9 @@ namespace NReco.NLQuery.Examples.NliPivotTable.Controllers {
 		// in this example serialized PivotData cube is used for the sake of simplicity
 		// for large datasets data should be aggrated on the fly, only for dimensions/measures needed by the report
 		IPivotData LoadDataCube(string cubeFile) {
-			var cubePath = Path.Combine( HttpContext.Server.MapPath( "~/App_Data/"), cubeFile);
+			var cubePath = Path.Combine( HostEnv.ContentRootPath, "App_Data", cubeFile);
 			var cacheKey = String.Format( "PivotData:{0}:", cubePath );
-			var pvtData = HttpRuntime.Cache.Get(cacheKey) as IPivotData;
+			var pvtData = MemCache.Get(cacheKey) as IPivotData;
 			if (pvtData == null) { 
 				var cubeRdr = new CubeFileReader( cubePath );
 
@@ -119,18 +115,20 @@ namespace NReco.NLQuery.Examples.NliPivotTable.Controllers {
 					pvtData = sliceQuery.Execute();
 				}
 
-
-				HttpRuntime.Cache.Add(cacheKey, pvtData, null, Cache.NoAbsoluteExpiration, new TimeSpan(0,2,0), CacheItemPriority.BelowNormal, null);
+				MemCache.Set(cacheKey, pvtData, new MemoryCacheEntryOptions() {
+					SlidingExpiration = new TimeSpan(0, 2, 0),
+					Priority = CacheItemPriority.Low
+				});
 			}
 			return pvtData;
 		}
 
 		QueryParser GetQueryParser(string cubeFile) {
 			var cacheKey = "query_parser_"+ cubeFile;
-			var parser = HttpRuntime.Cache.Get(cacheKey) as QueryParser;
+			var parser = MemCache.Get(cacheKey) as QueryParser;
 			if (parser == null) {
 				parser = new QueryParser(LoadDataCube(cubeFile));
-				HttpRuntime.Cache[cacheKey] = parser;
+				MemCache.Set(cacheKey, parser);
 			}
 			return parser;
 		}
