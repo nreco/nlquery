@@ -29,6 +29,8 @@ namespace NReco.NLQuery.Matchers {
 		public bool FirstPassOnly => true;
 		public bool Recursive => false;
 
+		public Func<string, string> ApplyStemmer { get; set; }
+
 		/// <summary>
 		/// Determines how many one token matches are allowed before applying max-score filter.
 		/// </summary>
@@ -54,18 +56,29 @@ namespace NReco.NLQuery.Matchers {
 				for (int tIdx = 0; tIdx < wordOrNumTokens.Length; tIdx++) {
 					var t = wordOrNumTokens[tIdx];
 					var val = Values[i];
-					var idx = val.IndexOf(t.Value, StringComparison.OrdinalIgnoreCase);
+					var tokenVal = t.Value;
+					var idx = val.IndexOf(tokenVal, StringComparison.OrdinalIgnoreCase);
+					if (idx<0 && ApplyStemmer!=null) {
+						var tokenStem = ApplyStemmer(tokenVal);
+						if (tokenStem!=tokenVal) {
+							idx = val.IndexOf(tokenStem, StringComparison.OrdinalIgnoreCase);
+							if (idx>=0) {
+								tokenVal = tokenStem;
+							}
+						}
+					}
 					if (idx >= 0) {
 						var contains = ContainsType.Contains;
 						if (idx == 0)
-							contains = val.Length == t.Value.Length ? ContainsType.Exact : ContainsType.StartsWith;
+							contains = val.Length == tokenVal.Length ? ContainsType.Exact : ContainsType.StartsWith;
 						var m = GetMatch(contains, new KeyValuePair<int, string>(i, val));
-						m.Score = ((float)t.Value.Length) / val.Length;
+						m.Score = ((float)tokenVal.Length) / val.Length;
+						m.MatchedTokensCount = 1;
 
 						// score penalty logic
 						if (t.Type == TokenType.Number) {
 							// for number
-							var nextCharIdx = idx + t.Value.Length;
+							var nextCharIdx = idx + tokenVal.Length;
 							var isNumberStart = idx == 0 || !Char.IsLetterOrDigit(val[idx - 1]);
 							var isNumberEnd = nextCharIdx>= val.Length || !Char.IsLetterOrDigit(val[nextCharIdx]);
 							// penalty if not exact number match
