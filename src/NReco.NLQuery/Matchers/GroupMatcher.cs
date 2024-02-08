@@ -41,13 +41,15 @@ namespace NReco.NLQuery.Matchers {
 			GetGroupMatch = getGroupMatch;
 		}
 
-		private bool MatchPhraseOp(Token[] tokens, ref int idx, out GroupType cmp) {
+		private bool MatchPhraseOp(Token[] tokens, ref int idx, out GroupType cmp, out int tokensCount) {
 			cmp = 0;
+			tokensCount = 0;
 			foreach (var entry in PhraseGroupTypes) {
 				if (entry.Key.Length>0) {
 					int startIdx = idx;
 					if (match(entry, ref startIdx)) {
 						cmp = entry.Value;
+						tokensCount = entry.Key.Length;
 						idx = startIdx;
 						return true;
 					}
@@ -96,6 +98,7 @@ namespace NReco.NLQuery.Matchers {
 					var endIdx = matchBag.Statement.GetIndex(cmpLeftPart.End);
 					var tokens = matchBag.Statement.Tokens;
 					GroupType cmp = 0;
+					int cmpTokensCount = 0;
 					for (int i = endIdx + 1; i < tokens.Length-1 /* this should not be last token */ ; i++) {
 						var t = tokens[i];
 						switch (t.Type) {
@@ -114,6 +117,7 @@ namespace NReco.NLQuery.Matchers {
 									foreach (var m in matchBag.FindByStart(t)) {
 										var mergedMatch = GetGroupMatch(cmpLeftPart, cmp, m, matchBag);
 										if (mergedMatch != null) {
+											mergedMatch.MatchedTokensCount = cmpLeftPart.MatchedTokensCount + cmpTokensCount + m.MatchedTokensCount;
 											mergedMatch.Start = cmpLeftPart.Start;
 											mergedMatch.End = m.End;
 											if (mergedMatch.Score == 0f) {
@@ -128,7 +132,7 @@ namespace NReco.NLQuery.Matchers {
 									}
 								} else {
 									if (PhraseGroupTypes != null)
-										if (MatchPhraseOp(tokens, ref i, out cmp))
+										if (MatchPhraseOp(tokens, ref i, out cmp, out cmpTokensCount))
 											continue; // next: read right part
 								}
 								break;

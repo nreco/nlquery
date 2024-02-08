@@ -54,6 +54,7 @@ namespace NReco.NLQuery.Matchers {
 			foreach (var t in tokens)
 				if ( !String.IsNullOrEmpty(t.Value) && String.Equals(lowerCaseWord, t.Value, StringComparison.OrdinalIgnoreCase)) {
 					var m = GetMatch();
+					m.MatchedTokensCount = 1;
 					m.Score = Match.ScoreCertain;
 					m.Start = t;
 					m.End = t;
@@ -77,6 +78,7 @@ namespace NReco.NLQuery.Matchers {
 				if (Start==null || WordIndex < Matcher.Words.Length)
 					return null;
 				var m = Matcher.GetMatch();
+				m.MatchedTokensCount = Matcher.Words.Length;  // all words are matched
 				m.Score = Match.ScoreCertain;
 				m.Start = Start;
 				m.End = End;

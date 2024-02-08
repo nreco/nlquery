@@ -104,6 +104,7 @@ namespace NReco.NLQuery.Matchers {
 				if (d.Start == null)
 					d.Start = t;
 				d.End = t;
+				d.MatchedTokensCount++;
 
 				int partsCount = 0;
 				if (d.Year.HasValue)

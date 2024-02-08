@@ -67,6 +67,7 @@ namespace NReco.NLQuery.Matchers {
 						var mergedMatch = Merge(matchBag.Statement, m, nextMatchAsT);
 						if (mergedMatch == null)
 							continue;
+						mergedMatch.MatchedTokensCount = m.MatchedTokensCount + nextMatchAsT.MatchedTokensCount;
 						mergedMatches.Add(nextMatch);
 						if (mergedMatch is T mergedMatchAsT) {
 							var nextMergedMatch = TryMergeWithNextMatch(mergedMatchAsT);

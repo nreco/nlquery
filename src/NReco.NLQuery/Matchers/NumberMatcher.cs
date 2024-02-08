@@ -44,6 +44,7 @@ namespace NReco.NLQuery.Matchers {
 				if (Start==null || End==null || End.Type!=TokenType.Number)
 					return null;
 				var m = new NumberMatch();
+				m.MatchedTokensCount = 1;
 				m.Score = Match.ScoreCertain;
 				m.Start = Start;
 				m.End = End;
