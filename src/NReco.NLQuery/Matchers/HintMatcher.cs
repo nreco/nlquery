@@ -37,7 +37,9 @@ namespace NReco.NLQuery.Matchers {
 					var endIdx = matchBag.Statement.GetIndex(hintM.End);
 					var tokens = matchBag.Statement.Tokens;
 					var hintForce = false;
-					for (int i=endIdx+1; i<tokens.Length; i++) {
+					// <hint> <value> or <hint>: <value>
+					var directOrderMatched = false;
+					for (int i = endIdx+1; i<tokens.Length; i++) {
 						var t = tokens[i];
 						switch (t.Type) {
 							case TokenType.Separator:
@@ -57,11 +59,13 @@ namespace NReco.NLQuery.Matchers {
 									hasMatches = true;
 									var mergedMatch = GetMatch(hintM, m, hintForce);
 									if (mergedMatch != null) {
+										mergedMatch.MatchedTokensCount = hintM.MatchedTokensCount + m.MatchedTokensCount;
 										mergedMatch.Start = hintM.Start;
 										mergedMatch.End = m.End;
 										if (mergedMatch.Score==0f) {
 											mergedMatch.Score = (hintM.Score+m.Score)/2;
 										}
+										directOrderMatched = true;
 										yield return mergedMatch;
 									}
 								}
@@ -69,10 +73,11 @@ namespace NReco.NLQuery.Matchers {
 									// no match
 									var mergedMatch = GetMatch(hintM, new StubMatch { Start = t, End = t }, hintForce);
 									if (mergedMatch!=null) {
+										mergedMatch.MatchedTokensCount = hintM.MatchedTokensCount+1;
 										mergedMatch.Start = hintM.Start;
 										mergedMatch.End = t;
 										if (mergedMatch.Score==0f)
-											mergedMatch.Score = hintForce || hintM.Score<Match.ScoreMaybe ? 
+											mergedMatch.Score = hintForce || hintM.Score<Match.ScoreMaybe ?
 																	hintM.Score : (hintM.Score+Match.ScoreMaybe)/2;
 										yield return mergedMatch;
 									}
@@ -80,6 +85,36 @@ namespace NReco.NLQuery.Matchers {
 								break;
 						}
 						break;
+					}
+					// <value> <hint>
+					var prevNonSpaceToken = matchBag.Statement.Prev(hintM.Start, (t) => t.Type!=TokenType.Separator);
+					if (prevNonSpaceToken!=null && (prevNonSpaceToken.Type==TokenType.Word || prevNonSpaceToken.Type==TokenType.Number)) {
+						//bool hasMatches = false;
+						foreach (var m in matchBag.FindByEnd(prevNonSpaceToken)) {
+							//hasMatches = true;
+							var mergedMatch = GetMatch(hintM, m, false);
+							if (mergedMatch != null) {
+								mergedMatch.MatchedTokensCount = hintM.MatchedTokensCount + m.MatchedTokensCount;
+								mergedMatch.Start = m.Start;
+								mergedMatch.End = hintM.End;
+								if (mergedMatch.Score==0f) {
+									mergedMatch.Score = (hintM.Score+m.Score)/2;
+								}
+								mergedMatch.Score *= directOrderMatched ? 0.5f :0.9f; // penalty for reverse order
+								yield return mergedMatch;
+							}
+						}
+						/*if (!hasMatches) {
+							// no match
+							var mergedMatch = GetMatch(hintM, new StubMatch { Start = prevNonSpaceToken, End = prevNonSpaceToken }, false);
+							if (mergedMatch!=null) {
+								mergedMatch.Start = prevNonSpaceToken;
+								mergedMatch.End = hintM.End;
+								if (mergedMatch.Score==0f)
+									mergedMatch.Score = (hintM.Score+Match.ScoreMaybe)/2;
+								yield return mergedMatch;
+							}
+						}*/
 					}
 				}
 		}
