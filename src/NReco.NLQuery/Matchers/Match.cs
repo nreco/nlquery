@@ -15,7 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace NReco.NLQuery.Matchers {
-	
+
 	/// <summary>
 	/// Represents a match which describes one or more tokens from original search query.
 	/// </summary>
@@ -39,6 +39,11 @@ namespace NReco.NLQuery.Matchers {
 		/// End token. Can be equal to <see cref="Start"/> if only one token is matched.
 		/// </summary>
 		public Token End { get; set; }
+
+		/// <summary>
+		/// Number of (significant) matched tokens.
+		/// </summary>
+		public int MatchedTokensCount { get; set; }
 
 		public Match() {
 		}
