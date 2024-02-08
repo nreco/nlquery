@@ -45,7 +45,7 @@ namespace NReco.NLQuery {
 					var t = checkTokenType(TokenType.Number, false, new[] { TokenType.Word });
 					if (t!=null)
 						yield return t;
-				} else if (IsSeparator(ch)) {
+				} else if (IsSeparator(ch) || Char.IsWhiteSpace(ch)) {
 					var t = checkTokenType(TokenType.Separator, false, null);
 					if (t!=null)
 						yield return t;
@@ -140,6 +140,8 @@ namespace NReco.NLQuery {
 				case '<':
 				case '>':
 				case '~':
+				case '^':
+				case '#':
 					return true;
 			}
 			return false;
@@ -155,6 +157,7 @@ namespace NReco.NLQuery {
 				case '?':
 				case '!':
 				case '_':
+				case '\'':
 					return true;
 			}
 			return false; //Char.IsPunctuation(ch);
