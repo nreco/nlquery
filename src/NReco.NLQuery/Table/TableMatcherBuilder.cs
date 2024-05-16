@@ -57,14 +57,57 @@ namespace NReco.NLQuery.Table {
 			}
 
 			if (KeywordMatchers.Count > 0) {
+				// TBD: add merge phrase matched for column matching!!
+				resMatchers.Add(new MergePhraseMatcher<ColumnMatch>(
+					(st, m1, m2) => {
+						if (m1.Column!=m2.Column || !MatchedCaptionsCanBeMerged(m1.MatchedCaption,m2.MatchedCaption)
+							|| m1.Score==Match.ScoreCertain || m2.Score==Match.ScoreCertain)
+							return null;
+						var mergedScore = IfBoostScore(m1)+IfBoostScore(m2);
+						//if (mergedScore>Match.ScoreCertain)
+						//	return null; // doesn't seem like 2 separated parts of the same name
+						var betweenWordOrNumCnt = st.Between(m1.End, m2.Start, false).Where(t => t.Type==TokenType.Number||t.Type==TokenType.Number).Count();
+						if (betweenWordOrNumCnt>3)
+							return null; // too far
+						if (betweenWordOrNumCnt>0)
+							mergedScore -= mergedScore*(0.25f*betweenWordOrNumCnt);
+						return new ColumnMatch(m1.Column) { 
+							Start = m1.Start,
+							End = m2.End,
+							Score = mergedScore,
+							MatchedCaption = m1.MatchedCaption ?? m2.MatchedCaption
+						};
+					}
+				));
 				resMatchers.Add(new MergePhraseMatcher<ColumnConditionMatch>(
 					(st, m1, m2) => {
-						if (m1.Column != m2.Column || m1.MatchedValue == null || m1.MatchedValue != m2.MatchedValue)
+						if (m1.Column != m2.Column || m1.MatchedValue == null || m1.MatchedValue != m2.MatchedValue
+							|| m1.Score==Match.ScoreCertain || m2.Score==Match.ScoreCertain)
 							return null;
 						var betweenVal = String.Concat(st.Between(m1.Start, m2.End).Select(t => t.Value));
 						var idx = m1.MatchedValue.IndexOf(betweenVal, StringComparison.OrdinalIgnoreCase);
-						if (idx < 0)
-							return null;
+						if (idx < 0) {
+							// both match the same value, so lets return a new exact match
+							// with score that takes into account relation between 2 merged matches
+							// and non-matched tokens between them
+							var mergedScore = m1.Score+m2.Score;
+							var betweenWordOrNumCnt = st.Between(m1.End, m2.Start, false).Where(t=>t.Type==TokenType.Number||t.Type==TokenType.Number).Count();
+							if (betweenWordOrNumCnt>3)
+								return null; // too far
+							if (betweenWordOrNumCnt>0)
+								mergedScore -= mergedScore*(0.25f*betweenWordOrNumCnt);
+							//Console.WriteLine($"MERGED: m1=[{String.Concat(st.Between(m1.Value.Start, m1.Value.End))}] m2=[{String.Concat(st.Between(m2.Value.Start, m2.Value.End))}] MatchValue=[{m1.MatchedValue}] score={mergedScore}");
+							return new ColumnConditionMatch() {
+								Column = m1.Column,
+								Hint = m1.Hint,
+								Start = m1.Start,
+								End = m2.End,
+								Condition = m1.Condition,
+								MatchedValue = m1.MatchedValue,
+								Value = m1,
+								Score = mergedScore
+							};
+						}
 						var contains = ColumnConditionMatch.ConditionType.Contains;
 						if (idx == 0) {
 							contains = ColumnConditionMatch.ConditionType.StartsWith;
@@ -98,6 +141,16 @@ namespace NReco.NLQuery.Table {
 			return resMatchers.ToArray();
 		}
 
+		float IfBoostScore(ColumnMatch colMatch) => colMatch.MatchedCaption==null ? 0.5f : colMatch.Score;
+
+		bool MatchedCaptionsCanBeMerged(string c1, string c2) {
+			if (c1==null && c2==null)
+				return false;
+			if (c1!=null && c2!=null)
+				return c1==c2;
+			return true;
+		}
+
 		bool EnsureColumnDataType(ColumnSchema column, TableColumnDataType dataType) {
 			return column.DataType == dataType || column.DataType == TableColumnDataType.Unknown;
 		}
@@ -109,9 +162,12 @@ namespace NReco.NLQuery.Table {
 					(left, cmp, right) => {
 						var leftColM = (ColumnMatch)left;
 						Match rightM = null;
+						float score = 0;
 						if (right is NumberMatch && EnsureColumnDataType(leftColM.Column,TableColumnDataType.Number)) {
+							score = leftColM.Score;
 							rightM = right;
 						} else if (right is DateMatch && EnsureColumnDataType(leftColM.Column,TableColumnDataType.Date)) {
+							score = leftColM.Score;
 							rightM = right;
 						} else if (right is ColumnConditionMatch rColCndM
 								&& (rColCndM.Column == leftColM.Column || rColCndM.Hint == null)
@@ -126,7 +182,7 @@ namespace NReco.NLQuery.Table {
 						if (rightM != null)
 							return new ColumnConditionMatch(leftColM.Column, getColumnCondition(cmp), rightM) {
 								Hint = left,
-								Score = Match.ScoreMaybe + (leftColM.Score + rightM.Score) / 4
+								Score = score > 0 ? score: Match.ScoreMaybe + (leftColM.Score + rightM.Score) / 4
 							};
 						return null;
 					}
@@ -135,13 +191,18 @@ namespace NReco.NLQuery.Table {
 					var cmpMatcherPhrases = new List<KeyValuePair<string[], ComparisonMatcher.ComparisonType>>();
 					foreach (var entry in Opts.MathOperatorPhrases) {
 						var wordTokens = Tokenizer.Parse(entry.Key).Where(t => t.Type == TokenType.Word).ToArray();
-						cmpMatcherPhrases.Add( new KeyValuePair<string[], ComparisonMatcher.ComparisonType>(
+						cmpMatcherPhrases.Add(new KeyValuePair<string[], ComparisonMatcher.ComparisonType>(
 								wordTokens.Select(t => t.Value).ToArray(), entry.Value
-							) );
+							));
 					}
 					cmpMatcher.PhraseComparisonTypes = cmpMatcherPhrases;
+					if (Opts.StopWords != null && Opts.StopWords.Length > 0) {
+						// register stop-words for op-phrases
+						var stopWords = new StopWordsFilter(Opts.StopWords);
+						cmpMatcher.IsPhraseStopWord = stopWords.IsStopWord;
+					}
+					resMatchers.Add(cmpMatcher);
 				}
-				resMatchers.Add(cmpMatcher);
 			}
 			if (Opts.MatchBoolOperators) {
 				var grpMatcher = new GroupMatcher(
@@ -202,7 +263,8 @@ namespace NReco.NLQuery.Table {
 				switch (valueMatch) {
 					case ColumnConditionMatch cndMatch:
 						var sameColumn = hintMatch.Column == cndMatch.Column;
-						if (sameColumn || force) {
+						var notContainsOrNotLowScore = cndMatch.Condition!=ColumnConditionMatch.ConditionType.Contains || cndMatch.Score>=(Match.ScoreMaybe/2);
+						if ((sameColumn || force) && notContainsOrNotLowScore) {
 							var m = new ColumnConditionMatch() {
 								Column = hintMatch.Column,
 								Hint = hintMatch,
@@ -210,8 +272,7 @@ namespace NReco.NLQuery.Table {
 								Value = cndMatch.Hint != null ? cndMatch.Value : valueMatch,
 								MatchedValue = cndMatch.MatchedValue
 							};
-							if (sameColumn) {
-								// boost score
+							if (sameColumn && valueMatch.Score>Match.ScoreMaybe) {
 								float boost = 1f;
 								if (force) {
 									boost = 1f + hintMatch.Score;
@@ -239,6 +300,7 @@ namespace NReco.NLQuery.Table {
 							return new ColumnConditionMatch() {
 								Column = hintMatch.Column,
 								Hint = hintMatch,
+								Score = (hintMatch.Score+numMatch.Score)/2f*0.9f,
 								Condition = ColumnConditionMatch.ConditionType.Exact,
 								Value = valueMatch
 							};
@@ -257,15 +319,31 @@ namespace NReco.NLQuery.Table {
 		}
 
 		protected virtual void ConfigureMatchers(TableSchema table) {
+			var stopWords = Opts.StopWords != null && Opts.StopWords.Length > 0 ? new StopWordsFilter(Opts.StopWords) : null;
+
 			foreach (var tblCaption in table.GetCaptionsToMatch())
-				addCaptionMatcher(tblCaption, table.ExactMatchOnly, new TableMatch(table).Clone);
+				addCaptionMatcher(tblCaption, table.ExactMatchOnly, (wordsCount) => new TableMatch(table) );
 
 			var hasNumberCols = false;
 			var hasDateCols = false;
 			foreach (var col in table.Columns) {
 				foreach (var colCaption in col.GetCaptionsToMatch()) {
-					addCaptionMatcher(colCaption, col.ExactMatchOnly, new ColumnMatch(col).Clone);
+					addCaptionMatcher(colCaption, col.ExactMatchOnly, (wordsCount) => {
+						var m = new ColumnMatch(col) { MatchedCaption = colCaption };
+						if (col.CaptionBoostPhrases!=null && col.CaptionBoostPhrases.Length>0)
+							m.Score = ((float)wordsCount)/(wordsCount+1); // multiplier: reduced score for match without boost
+						return m;
+					} );
 				}
+				if (col.CaptionBoostPhrases!=null)
+					foreach (var boostPhrase in col.CaptionBoostPhrases) {
+						var tokens = Tokenizer.Parse(boostPhrase).Where(t => !String.IsNullOrEmpty(t.Value) && t.Type!=TokenType.Separator);
+						var exactMatcher = new ExactPhraseMatcher(tokens.Select(t => t.Value).ToArray(),
+							() => new ColumnMatch(col) { 
+								Score = 0.001f  // multiplier for boost-only phrase match (it should be merged with column's caption match)
+							});
+						Matchers.Add(exactMatcher);
+					}
 				if (col.Values != null && col.Values.Length > 0)
 					KeywordMatchers.Add(new ListContainsMatcher(col.Values, (containsType, matchedVal) => {
 						return new ColumnConditionMatch() {
@@ -273,7 +351,7 @@ namespace NReco.NLQuery.Table {
 							Condition = (ColumnConditionMatch.ConditionType)containsType,
 							MatchedValue = matchedVal.Value
 						};
-					}));
+					}) { ApplyStemmer = Opts.ApplyStemmer });
 
 				if (EnsureColumnDataType(col,TableColumnDataType.Date))
 					hasDateCols = true;
@@ -293,23 +371,29 @@ namespace NReco.NLQuery.Table {
 				Matchers.Add(new AssignDefaultDateColumnMatcher(firstDateCol));
 			}
 
-			void addCaptionMatcher(string caption, bool exactOnly, Func<Match> getMatch) {
+			void addCaptionMatcher(string caption, bool exactOnly, Func<int,Match> getMatch) {
 				var captionTokens = Tokenizer.Parse(caption).Where(t => !String.IsNullOrEmpty(t.Value)).ToArray();
 				var captionTokensWithoutSeparator = captionTokens.Where(t => t.Type != TokenType.Separator).ToArray();
-				var captionWordsOnly = captionTokensWithoutSeparator.Where(t => t.Type == TokenType.Word).ToArray();
-				if (exactOnly || captionTokensWithoutSeparator.Length != captionWordsOnly.Length) {
-					var exactCaptionMatcher = new ExactPhraseMatcher(captionTokensWithoutSeparator.Select(t => t.Value).ToArray(), getMatch);
+				var captionWordOrNumOnly = captionTokensWithoutSeparator.Where(t => t.Type == TokenType.Word || t.Type==TokenType.Number);
+				if (stopWords!=null)
+					captionWordOrNumOnly = stopWords.RemoveStopWords(captionWordOrNumOnly);
+				var captionWordOrNumOnlyArr = captionWordOrNumOnly.ToArray();
+				if (exactOnly || captionTokensWithoutSeparator.Length != captionWordOrNumOnlyArr.Length) {
+					var matchWords = captionTokensWithoutSeparator.Select(t => t.Value).ToArray();
+					var exactCaptionMatcher = new ExactPhraseMatcher(matchWords, ()=>getMatch(matchWords.Length) );
 					if (captionTokensWithoutSeparator.Length == captionTokens.Length)
 						exactCaptionMatcher.AllowSeparators = false; // do not allow spaces
 					Matchers.Add(exactCaptionMatcher);
 				}
 				if (!exactOnly) {
+					var matchWords = captionWordOrNumOnlyArr.Select(t => t.Value).ToArray();
 					KeywordMatchers.Add(
-						new LikePhraseMatcher(
-							captionWordsOnly.Select(t => t.Value).ToArray(),
-							getMatch));
+						new LikePhraseMatcher(matchWords, ()=>getMatch(matchWords.Length) ) {
+							ApplyStemmer = Opts.ApplyStemmer
+						});
 				}
 			}
+
 		}
 
 		protected virtual void ConfigureDateMatchers(List<IMatcher> matchers) {
@@ -356,7 +440,7 @@ namespace NReco.NLQuery.Table {
 				foreach (var m in matchBag.Matches) {
 					if (m is DateMatch || m is DateOffsetMatch) {
 						if (matchBag.Matches.Any(mm => mm is ColumnConditionMatch cndM && cndM.Value==m))
-							continue; // match is already part of condition
+							continue; // match is already a part of condition
 						yield return new ColumnConditionMatch() {
 							Column = DateColumn,
 							Condition = ColumnConditionMatch.ConditionType.Exact,
@@ -387,21 +471,22 @@ namespace NReco.NLQuery.Table {
 			public Dictionary<string, ComparisonMatcher.ComparisonType> MathOperatorPhrases = new Dictionary<string, ComparisonMatcher.ComparisonType>() {
 				{"equal", ComparisonMatcher.ComparisonType.Equal},
 				{"equals", ComparisonMatcher.ComparisonType.Equal},
-				{"not equal", ComparisonMatcher.ComparisonType.NotEqual},
 				{"not equals", ComparisonMatcher.ComparisonType.NotEqual},
+				{"not equal", ComparisonMatcher.ComparisonType.NotEqual},
 				{"before", ComparisonMatcher.ComparisonType.LessThan},
 				{"below", ComparisonMatcher.ComparisonType.LessThan},
-				{"less", ComparisonMatcher.ComparisonType.LessThan},
 				{"less than", ComparisonMatcher.ComparisonType.LessThan},
+				{"less", ComparisonMatcher.ComparisonType.LessThan},
+				{"smaller than", ComparisonMatcher.ComparisonType.LessThan},
 				{"fewer", ComparisonMatcher.ComparisonType.LessThan},
 				{"under", ComparisonMatcher.ComparisonType.LessThan},
 				{"ending with", ComparisonMatcher.ComparisonType.LessThanOrEqual},
 				{"after", ComparisonMatcher.ComparisonType.GreaterThan},
 				{"above", ComparisonMatcher.ComparisonType.GreaterThan},
-				{"greater", ComparisonMatcher.ComparisonType.GreaterThan},
 				{"greater than", ComparisonMatcher.ComparisonType.GreaterThan},
-				{"more", ComparisonMatcher.ComparisonType.GreaterThan},
+				{"greater", ComparisonMatcher.ComparisonType.GreaterThan},
 				{"more than", ComparisonMatcher.ComparisonType.GreaterThan},
+				{"more", ComparisonMatcher.ComparisonType.GreaterThan},
 				{"larger", ComparisonMatcher.ComparisonType.GreaterThan},
 				{"over", ComparisonMatcher.ComparisonType.GreaterThan},
 				{"starting with", ComparisonMatcher.ComparisonType.GreaterThanOrEqual},
@@ -413,6 +498,8 @@ namespace NReco.NLQuery.Table {
 
 			public bool MatchMathOperators { get; set; } = true;
 			public bool MatchBoolOperators { get; set; } = true;
+
+			public Func<string, string> ApplyStemmer { get; set; }
 		}
 
 	}

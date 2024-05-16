@@ -37,6 +37,8 @@ namespace NReco.NLQuery.Table
 	public class ColumnMatch : Match {
 		public ColumnSchema Column { get; set; }
 
+		public string MatchedCaption { get; set; }
+
 		public ColumnMatch(ColumnSchema c) {
 			Column = c;
 		}

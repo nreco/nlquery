@@ -61,6 +61,7 @@ namespace NReco.NLQuery.Matchers {
 					if (idx<0 && ApplyStemmer!=null) {
 						var tokenStem = ApplyStemmer(tokenVal);
 						if (tokenStem!=tokenVal) {
+							// val also should be stemmed?..
 							idx = val.IndexOf(tokenStem, StringComparison.OrdinalIgnoreCase);
 							if (idx>=0) {
 								tokenVal = tokenStem;

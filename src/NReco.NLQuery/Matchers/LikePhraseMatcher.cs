@@ -38,20 +38,8 @@ namespace NReco.NLQuery.Matchers {
 		public LikePhraseMatcher(string[] matchWords, Func<Match> getMatch) {
 			GetMatch = getMatch;
 			Words = matchWords;
-			TotalPhraseLength = 0;
-			PhraseWordsCount = 0;
-			bool hasBoost = false;
-			for (int i = 0; i < matchWords.Length; i++) {
-				var w = matchWords[i];
-				if (w.Length>0 && w[0]!='@') {
-					TotalPhraseLength += w.Length;
-					PhraseWordsCount++;
-				} else {
-					hasBoost = true;
-				}
-			}
-			if (hasBoost)
-				PhraseWordsCount++;
+			TotalPhraseLength = Words.Sum(w=>w.Length);
+			PhraseWordsCount = Words.Length;
 		}
 
 		public IEnumerable<Match> GetMatches(MatchBag matchBag) {
@@ -60,34 +48,37 @@ namespace NReco.NLQuery.Matchers {
 			Token end = null;
 			float score = 0f;
 			float likeScore = 0f;
-			int wordIdx = -1;
-			var matched = new HashSet<int>();
+			string matchedWord = null;
+			var matched = new HashSet<string>();
 			foreach (var t in tokens) {
 				switch (t.Type) {
 					case TokenType.Separator:
 						continue;
 					case TokenType.Number:
 					case TokenType.Word:
-						if (Like(t.Value, ref likeScore, ref wordIdx)) {
-							if (matched.Contains(wordIdx)) {
+						if (Like(t.Value, ref likeScore, ref matchedWord)) {
+							if (matched.Contains(matchedWord)) {
 								// phrase word double match
-								yield return currentMatch();
+								var m = currentMatch();
+								if (m!=null)
+									yield return m;
 							}
-							matched.Add(wordIdx);
+							matched.Add(matchedWord);
 							if (start == null) {
 								start = t;
 							}
 							end = t;
 							score += likeScore;
 						} else {
-							if (start != null) {
-								yield return currentMatch();
-							}
+							var m = currentMatch();
+							if (m!=null)
+								yield return m;
 						}
 						break;
-					default:
-						if (start != null) {
-							yield return currentMatch();
+					default: {
+							var m = currentMatch();
+							if (m!=null)
+								yield return m;
 						}
 						break;
 				}
@@ -100,22 +91,25 @@ namespace NReco.NLQuery.Matchers {
 				matched.Clear();
 			}
 			Match currentMatch() {
-				var m = GetMatch();
+				if (start==null)
+					return null;
+				var	m = GetMatch();
 				m.MatchedTokensCount = matched.Count;
 				m.Start = start;
 				m.End = end;
-				m.Score = score;
+				// if GetMatch returns non-zero score, use it as a multiplier
+				m.Score = m.Score>0 ? m.Score*score : score;
 				reset();
 				return m;
 			}
 		}
 
-		float GetScore(int wordIdx, string matchStr, int matchIdx) {
+		float GetScore(string word, string matchStr, int matchIdx) {
 			var score = 0f;
 			if (ScoreWeightByTotalLength) {
 				score = ((float)matchStr.Length) / TotalPhraseLength; // weighted by number of chars
 			} else {
-				var wordScore = ((float)matchStr.Length) / Words[wordIdx].Length;
+				var wordScore = ((float)matchStr.Length) / word.Length;
 				score = wordScore / PhraseWordsCount;  // weighted by number of words
 			}
 			if (matchIdx > 0) {
@@ -126,20 +120,11 @@ namespace NReco.NLQuery.Matchers {
 			return score;
 		}
 
-		bool Like(string s, ref float score, ref int wordIdx) {
+		bool Like(string s, ref float score, ref string matchedWord) {
 			for (int i=0; i<Words.Length; i++) {
 				var word = Words[i];
-				var isBoostWord = word.Length>0 && word[0]=='@';
-				if (isBoostWord) {
-					if (word.IndexOf(s, 1, StringComparison.OrdinalIgnoreCase)==1 && s.Length==word.Length-1) {
-						score = GetScore(i,word,0)*1.5f; // boosted
-						wordIdx = i;
-						return true;
-					}
-					continue;
-				}
 				var idx = word.IndexOf(s, StringComparison.OrdinalIgnoreCase);
-				if (idx<0 && !isBoostWord && ApplyStemmer!=null) {
+				if (idx<0 && ApplyStemmer!=null) {
 					var ss = ApplyStemmer(s);
 					var stemmedWord = ApplyStemmer(word);
 					if (ss!=s) {
@@ -149,8 +134,8 @@ namespace NReco.NLQuery.Matchers {
 					}
 				}
 				if (idx >= 0) {
-					score = GetScore(i, s, idx);
-					wordIdx = i;
+					score = GetScore(word, s, idx);
+					matchedWord = word;
 					return true;
 				}
 			}

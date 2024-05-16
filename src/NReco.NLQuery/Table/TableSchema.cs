@@ -60,6 +60,11 @@ namespace NReco.NLQuery.Table
 		public string[] AltCaptions { get; set; }
 
 		/// <summary>
+		/// A list of additional keywords that may 'boost' this column match by caption.
+		/// </summary>
+		public string[] CaptionBoostPhrases { get; set; }
+
+		/// <summary>
 		/// Internal column name (not used for recognition).
 		/// </summary>
 		public string Name { get; set; }
