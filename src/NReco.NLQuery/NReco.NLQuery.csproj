@@ -1,11 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Description>NLQuery: natural language query parser recognizes entities in context of structured sources (like tabular dataset). Can be used for building natural language interface to SQL database or OLAP cube, implementing custom app-specific search.</Description>
-    <Copyright>Copyright (c) 2016-2022 Vitalii Fedorchenko</Copyright>
+    <Description>NLQuery: natural language query parser recognizes entities in context of structured sources (like tabular dataset). Can be used for building natural language interface to SQL database or OLAP cube, implementing custom app-specific search.
+	
+Usage examples: https://www.nrecosite.com/nlp_ner_net.aspx
+Online demo: http://nlquery.nrecosite.com/	
+	</Description>
+    <Copyright>Copyright (c) 2016-2024 Vitalii Fedorchenko</Copyright>
     <AssemblyTitle>NReco.NLQuery</AssemblyTitle>
 	<Title>Natural language query parser and rule-based named entity recognizer.</Title>
-    <VersionPrefix>1.1.1</VersionPrefix>
+    <VersionPrefix>1.2.0</VersionPrefix>
     <Authors>Vitalii Fedorchenko</Authors>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -17,11 +21,34 @@
     <PackageIconUrl>https://www.nrecosite.com/img/nreco-logo-200.png</PackageIconUrl>
     <PackageProjectUrl>https://github.com/nreco/nlquery</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/nreco/nlquery/master/LICENSE</PackageLicenseUrl>
-	<PackageReleaseNotes>Online demo: http://nlquery.nrecosite.com/
-Usage examples: https://www.nrecosite.com/nlp_ner_net.aspx
-API reference: https://www.nrecosite.com/doc/NReco.NLQuery/
+	<PackageReleaseNotes>Source code: https://github.com/nreco/nlquery
+
+Version 1.2.0 changes:
+- Boost words now implemented using MergePhraseMatcher in TableMatcherBuilder
+- Now words stemming is handled inside LikePhraseMatcher and ListContainsMatcher which gives more accurate recognition.
+- ComparisonMatcher: now can skip stop words + reverse order handling: OP_MATCH VALUE ENTITY (example: "more than 5 items")
+- Match class: added MatchedTokensCount property (needed for relevant scoring function when MergePhraseMatcher is used).
+- HintMatcher: now supports reverse-order like VALUE HINT_MATCH
+- Tokenizer: added '#', '^' as math-chars, single-quote as punctuation, and any valid unicode white-space works as a separator.
+
+Version 1.1.1 changes:
+- NReco.NLQuery is now open source
+- Free usage is allowed under certain conditions
+- License key is verified but no 'trial' restrictions anymore
+
+Version 1.1.0 changes:
+- added support of synonyms (TableSchema/TableMatcherBuilder)
+- added ComparisonMatcher for patterns like "age > 20", "temp above 30" etc
+- added GroupMatcher for matches combined with "and"/"or"
+- options for TableMatcherBuilder to control comparison/group matching
+- handle pharse in double-quotes as single token (Tokenizer class)
+
+Version 1.0.0 changes:
+- totally redeveloped engine (API is changed): more efficient and highly extensible in comparing to beta1, supports custom external matchers (for example, Lucene index)
+- full set of generic matchers: Number, Date, DateOffset, ExactPhrase, LikePhrase, ListContains, Hint, MergePhrase
+- efficient greedy algorithm for matches combinations generation
+- TableMatcherBuilder that signficantly simplifies library usage for recognition in context of tabular data.
 </PackageReleaseNotes>	
-    <NetStandardImplicitPackageVersion Condition=" '$(TargetFramework)' == 'netstandard1.3' ">1.6.0</NetStandardImplicitPackageVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
