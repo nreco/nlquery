@@ -439,14 +439,15 @@ namespace NReco.NLQuery.Table {
 			public IEnumerable<Match> GetMatches(MatchBag matchBag) {
 				foreach (var m in matchBag.Matches) {
 					if (m is DateMatch || m is DateOffsetMatch) {
-						if (matchBag.Matches.Any(mm => mm is ColumnConditionMatch cndM && cndM.Value==m))
-							continue; // match is already a part of condition
+						if (matchBag.Matches.Any(mm => mm is ColumnConditionMatch cndM && cndM.Value==m && cndM.Column.DataType==TableColumnDataType.Date))
+							continue; // match is already a part of date-type column condition
 						yield return new ColumnConditionMatch() {
 							Column = DateColumn,
 							Condition = ColumnConditionMatch.ConditionType.Exact,
 							Value = m,
 							Start = m.Start,
 							End = m.End,
+							MatchedTokensCount = m.MatchedTokensCount,
 							Score = Match.ScoreMaybe
 						};
 					}
