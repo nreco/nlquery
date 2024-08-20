@@ -9,7 +9,7 @@ Online demo: http://nlquery.nrecosite.com/
     <Copyright>Copyright (c) 2016-2024 Vitalii Fedorchenko</Copyright>
     <AssemblyTitle>NReco.NLQuery</AssemblyTitle>
 	<Title>Natural language query parser and rule-based named entity recognizer.</Title>
-    <VersionPrefix>1.2.0</VersionPrefix>
+    <VersionPrefix>1.2.1</VersionPrefix>
     <Authors>Vitalii Fedorchenko</Authors>
     <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -22,6 +22,10 @@ Online demo: http://nlquery.nrecosite.com/
     <PackageProjectUrl>https://github.com/nreco/nlquery</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/nreco/nlquery/master/LICENSE</PackageLicenseUrl>
 	<PackageReleaseNotes>Source code: https://github.com/nreco/nlquery
+
+Version 1.2.1 changes:
+- TableMatcherBuilder: fixed an issue when default date column is assigned to DateMatch with MatchedTokensCount=0
+- TableMatcherBuilder: fixed an issue when default date column is not assigned because of 'weak' hint-match of column with DataType=Unknown
 
 Version 1.2.0 changes:
 - Boost words now implemented using MergePhraseMatcher in TableMatcherBuilder
